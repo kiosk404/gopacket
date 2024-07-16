@@ -127,13 +127,75 @@ func (t *TLS) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	return t.decodeTLSRecords(data, df)
 }
 
+func (t *TLS) DecodeTLS13HandshakeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	t.BaseLayer.Contents = data
+	t.BaseLayer.Payload = nil
+	t.ChangeCipherSpec = t.ChangeCipherSpec[:0]
+	t.Handshake = t.Handshake[:0]
+	t.AppData = t.AppData[:0]
+	t.Alert = t.Alert[:0]
+
+	return t.decodeTLS13Records(data, df)
+}
+
+func (t *TLS) decodeTLS13Records(data []byte, df gopacket.DecodeFeedback) error {
+	if len(data) < 5 {
+		df.SetTruncated()
+		return errors.New("TLS record too short")
+	}
+
+	var r TLSHandshakeRecord
+	handshakeType := HandshakeType(data[0])
+	headerLength := 4
+	TotalLength := int(uint32(data[1])<<16|uint32(data[2])<<8|uint32(data[3])) + headerLength
+
+	if len(data) < int(TotalLength) {
+		df.SetTruncated()
+		return errors.New("TLS packet length mismatch")
+	}
+
+	r.ContentType = TLSHandshake
+	r.Version = TLSVersion(0x0303)
+	r.Length = uint16(TotalLength)
+	r.HandshakeType = handshakeType
+	switch handshakeType {
+	case TLSHANDSHAKE_CERTIFICATE:
+	case TLSHANDSHAKE_FINISHED:
+	case TLSHANDSHAKE_ENCRYPTED_EXTENSION:
+
+		extension := &EncryptedExtension{}
+		err := extension.decodeFromBytes(data[:TotalLength], nil)
+		if err != nil {
+			return err
+		}
+		r.ServerExtension = *extension
+	case TLSHANDSHAKE_CERTIFICATE_VERIFY:
+	case TLSHANDSHAKE_ALERT:
+	case TLSHAKDSHAKE_CLIENT_KEY_EXCHANGE:
+	case TLSHANDSHAKE_CERTIFICATE_REQUEST:
+	case TLSHANDSHAKE_HELLO_REQUEST:
+	case TLSHANDSHAKE_SERVER_DONE:
+	case TLSHANDSHAKE_NEW_SESSION_TICKET:
+	case TLSHANDSHAKE_SERVER_KEY_EXCHANGE:
+	default:
+		return errors.New("Unknown TLS Handshake type")
+	}
+
+	t.Handshake = append(t.Handshake, r)
+	if len(data) == TotalLength {
+		return nil
+	}
+
+	return t.decodeTLS13Records(data[TotalLength:], df)
+}
+
 func (t *TLS) decodeTLSRecords(data []byte, df gopacket.DecodeFeedback) error {
 	if len(data) < 5 {
 		df.SetTruncated()
 		return errors.New("TLS record too short")
 	}
 
-	// since there are no further layers, the baselayer's content is
+	// since there are no further layers, the base layer's content is
 	// pointing to this layer
 	// TODO: Consider removing this
 	t.BaseLayer = BaseLayer{Contents: data[:len(data)]}

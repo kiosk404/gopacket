@@ -48,6 +48,7 @@ const (
 	TLSAlertInternalError             TLSAlertDescr = 80
 	TLSAlertUserCanceled              TLSAlertDescr = 90
 	TLSAlertNoRenegotiation           TLSAlertDescr = 100
+	TLSAlertMissingExtension          TLSAlertDescr = 109
 	TLSAlertUnsupportedExtension      TLSAlertDescr = 110
 	TLSAlertUnknownDescription        TLSAlertDescr = 255
 )
@@ -157,6 +158,8 @@ func (ad TLSAlertDescr) String() string {
 		return "internal_error"
 	case TLSAlertUserCanceled:
 		return "user_canceled"
+	case TLSAlertMissingExtension:
+		return "missing extension"
 	case TLSAlertNoRenegotiation:
 		return "no_renegotiation"
 	case TLSAlertUnsupportedExtension:

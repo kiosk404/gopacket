@@ -42,7 +42,7 @@ var testClientHelloDecoded = &TLS{
 	ChangeCipherSpec: nil,
 	Handshake: []TLSHandshakeRecord{
 		{
-			TLSRecordHeader{
+			TLSRecordHeader: TLSRecordHeader{
 				ContentType: 22,
 				Version:     0x0301,
 				Length:      209,
@@ -116,14 +116,14 @@ var testClientKeyExchangeDecoded = &TLS{
 	},
 	Handshake: []TLSHandshakeRecord{
 		{
-			TLSRecordHeader{
+			TLSRecordHeader: TLSRecordHeader{
 				ContentType: 22,
 				Version:     0x0301,
 				Length:      70,
 			},
 		},
 		{
-			TLSRecordHeader{
+			TLSRecordHeader: TLSRecordHeader{
 				ContentType: 22,
 				Version:     0x0301,
 				Length:      48,
